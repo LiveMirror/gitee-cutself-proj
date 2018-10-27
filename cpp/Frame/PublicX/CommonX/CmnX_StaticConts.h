@@ -1,11 +1,10 @@
-#pragma once
+Ôªø#pragma once
 /*
 @author zhp
 @date 2016/1/31 19:18
-@purpose æ≤Ã¨»›∆˜
+@purpose ÈùôÊÄÅÂÆπÂô®
+@major 2018/6/28 14:58.‰øÆÂ§çÈáçÂ§ßbug,eraseÁöÑÊûêÊûÑÈóÆÈ¢ò„ÄÇ
 */
-#include <config/targetver.h>
-#include <config/AdjustWin32.h>
 #include <array>
 #include <cassert>
 #include <vector>
@@ -17,7 +16,7 @@
 #pragma pack(1)
 //////////////////////////////////////////////////////////////////////////
 template<typename T_, unsigned int ContSize_>
-class CmnStaticContBase{
+class CmnStaticContBase {
 private:
 	typedef char(TypeWrapperT_)[sizeof(T_)];
 
@@ -40,24 +39,24 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 
 public:
-	size_type max_size() const{
+	size_type max_size() const {
 		return ContSize_;
 	}
 
 protected:
-	void Construct(IndexT idx, const ValueTypeT& v){
+	void Construct(IndexT idx, const ValueTypeT& v) {
 		assert(idx < MaxSize);
 		new ((ValueTypeT*)&cont_[idx]) ValueTypeT(v);
 	}
-	void Destroy(IndexT idx){
+	void Destroy(IndexT idx) {
 		assert(idx < MaxSize);
 		((ValueTypeT*)&cont_[idx])->~ValueTypeT();
 	}
-	void Construct(ValueTypeT* ptr, const ValueTypeT& v){
+	void Construct(ValueTypeT* ptr, const ValueTypeT& v) {
 		assert(ptr >= (ValueTypeT*)(void*)&cont_[0] && ptr < (ValueTypeT*)(void*)&cont_[0] + MaxSize);
 		new (ptr) ValueTypeT(v);
 	}
-	void Destroy(ValueTypeT* ptr){
+	void Destroy(ValueTypeT* ptr) {
 		assert(ptr >= (ValueTypeT*)(void*)&cont_[0] && ptr < (ValueTypeT*)(void*)&cont_[0] + MaxSize);
 		ptr->~ValueTypeT();
 	}
@@ -67,7 +66,9 @@ public:
 };
 //////////////////////////////////////////////////////////////////////////
 template<typename T_, unsigned int ContSize_>
-class CmnStaticVector : public CmnStaticContBase<T_, ContSize_>{
+class CmnStaticVector : public CmnStaticContBase<T_, ContSize_> {
+	typedef CmnStaticContBase<T_, ContSize_> MyBase_;
+
 public:
 	typedef T_ value_type;
 	typedef unsigned int size_type;
@@ -80,61 +81,68 @@ public:
 	typedef const_pointer const_iterator;
 
 public:
-	CmnStaticVector(){
-		begin_ = (pointer)(void*)&cont_[0];
-		end_ = begin_;
+	CmnStaticVector() {
+		Init();
 	}
-	CmnStaticVector(const CmnStaticVector& rhs) : CmnStaticVector(){
+	CmnStaticVector(const CmnStaticVector& rhs) {
+		Init();
 		for (auto& v : rhs)
 			push_back(v);
 	}
-	explicit CmnStaticVector(size_type size) : CmnStaticVector(){
+	explicit CmnStaticVector(size_type size) {
+		Init();
 		resize(size);
 	}
-	CmnStaticVector(std::initializer_list<value_type> init_list) : CmnStaticVector(){
-		for (auto& v : init_list)
-			push_back(v);
-	}
-	CmnStaticVector& operator = (const CmnStaticVector& rhs){
+	/*CmnStaticVector(std::initializer_list<value_type> init_list) : CmnStaticVector(){
+	for (auto& v : init_list)
+	push_back(v);
+	}*/
+	CmnStaticVector& operator = (const CmnStaticVector& rhs) {
 		clear();
 		for (auto& v : rhs)
 			push_back(v);
 		return *this;
 	}
-	~CmnStaticVector(){
+	~CmnStaticVector() {
 		clear();
 	}
-	iterator begin(){
+	iterator data() const {
 		return begin_;
 	}
-	iterator end(){
-		return end_;
-	}
-	iterator begin() const{
+	iterator data() {
 		return begin_;
 	}
-	iterator end() const{
+	iterator begin() {
+		return begin_;
+	}
+	iterator end() {
 		return end_;
 	}
-	void push_back(const value_type& v){
-		if (end_ - begin_ >= MaxSize)
+	iterator begin() const {
+		return begin_;
+	}
+	iterator end() const {
+		return end_;
+	}
+	void push_back(const value_type& v) {
+		if (end_ - begin_ >= MyBase_::MaxSize)
 		{
 			assert(false);
 			return;
 		}
-		Construct(end_, v);
+		this->Construct(end_, v);
 		++end_;
 	}
-	void pop_back(){
+	void pop_back() {
 		if (begin_ == end_)
 		{
 			assert(false);
 			return;
 		}
 		--end_;
-		Destroy(end_);
+		this->Destroy(end_);
 	}
-	void pop_front(){
+	void pop_front() {
 		if (begin_ == end_)
 		{
 			assert(false);
@@ -142,43 +150,43 @@ public:
 		}
 		erase(begin_);
 	}
-	void swap(CmnStaticVector& rhs){
+	void swap(CmnStaticVector& rhs) {
 		CmnStaticVector vec(*this);
 		*this = rhs;
 		rhs = vec;
 	}
-	size_type size() const{
+	size_type size() const {
 		return end_ - begin_;
 	}
-	bool empty() const{
+	bool empty() const {
 		return begin_ == end_;
 	}
-	const_reference operator[](size_type pos) const{
+	const_reference operator[](size_type pos) const {
 		assert(size() > pos);
 		return *(begin_ + pos);
 	}
-	reference operator[](size_type pos){
+	reference operator[](size_type pos) {
 		assert(size() > pos);
 		return *(begin_ + pos);
 	}
-	reference front(){
+	reference front() {
 		return *begin();
 	}
-	const_reference front() const{
+	const_reference front() const {
 		return (*begin());
 	}
-	reference back(){
+	reference back() {
 		return (*(end() - 1));
 	}
-	const_reference back() const{
+	const_reference back() const {
 		return (*(end() - 1));
 	}
-	void clear(){
+	void clear() {
 		while (!empty())
 			pop_back();
 	}
-	void resize(size_type new_size){
-		if (new_size > MaxSize)
+	void resize(size_type new_size) {
+		if (new_size > MyBase_::MaxSize)
 		{
 			assert(false);
 			return;
@@ -203,18 +211,18 @@ public:
 			}
 		}
 	}
-	void reserve(size_type new_size){}
-	void erase(iterator it){
+	void reserve(size_type new_size) {}
+	void erase(iterator it) {
 		if (it >= begin_ && it < end_)
 		{
-			Destroy(it);
 			std::move(it + 1, end_, it);
 			--end_;
+			this->Destroy(end_);
 		}
 		else
 			assert(false);
 	}
-	void erase(iterator it, iterator it_end){
+	void erase(iterator it, iterator it_end) {
 		if (it >= it_end)
 		{
 			assert(it == it_end);
@@ -230,17 +238,23 @@ public:
 			assert(false);
 			return;
 		}
-		auto it_old = it;
-		while (it != it_end)
+		std::move(it_end, end_, it);
+		const auto erase_cnt = it_end - it;
+		assert(erase_cnt >= 0);
+		for (it = end_ - erase_cnt; it != end_; ++it)
 		{
-			Destroy(it);
-			++it;
-		}		
-		std::move(it_end, end_, it_old);
-		end_ -= it_end - it_old;
+			this->Destroy(it);
+		}
+		end_ -= erase_cnt;
 	}
-	bool is_full() const{
-		return size() == MaxSize;
+	bool is_full() const {
+		return size() == MyBase_::MaxSize;
+	}
+
+private:
+	void Init() {
+		begin_ = (pointer)(void*)&this->cont_[0];
+		end_ = begin_;
 	}
 
 public:
@@ -249,7 +263,7 @@ public:
 };
 //////////////////////////////////////////////////////////////////////////
 template<typename T_, unsigned int ContSize_>
-class CmnBufferVector{
+class CmnBufferVector {
 public:
 	typedef CmnStaticVector<T_, ContSize_> StaticVector;
 	typedef typename StaticVector::value_type value_type;
@@ -261,101 +275,100 @@ public:
 	typedef typename StaticVector::const_pointer const_pointer;
 
 public:
-	struct MyIterator_ : std::_Iterator012<std::random_access_iterator_tag,
+	struct MyIterator_ : std::iterator<std::random_access_iterator_tag,
 		value_type,
 		difference_type,
 		pointer,
-		reference,
-		std::_Iterator_base>{
-		MyIterator_(const MyIterator_& rhs){
+		reference> {
+		MyIterator_(const MyIterator_& rhs) {
 			the_cont_ = rhs.the_cont_;
 			cur_idx_ = rhs.cur_idx_;
 		}
-		MyIterator_(const CmnBufferVector* cont){
+		MyIterator_(const CmnBufferVector* cont) {
 			assert(cont);
 			the_cont_ = (CmnBufferVector*)cont;
 			cur_idx_ = cont->size();
 		}
-		MyIterator_(const CmnBufferVector* cont, size_type cur_idx) : the_cont_((CmnBufferVector*)cont), cur_idx_(cur_idx){
+		MyIterator_(const CmnBufferVector* cont, size_type cur_idx) : the_cont_((CmnBufferVector*)cont), cur_idx_(cur_idx) {
 			assert(cont);
 		}
-		MyIterator_& operator = (const MyIterator_& rhs){
+		MyIterator_& operator = (const MyIterator_& rhs) {
 			the_cont_ = rhs.the_cont_;
 			cur_idx_ = rhs.cur_idx_;
 			return *this;
 		}
-		const_reference operator*() const{
+		const_reference operator*() const {
 			assert(the_cont_);
 			if (cur_idx_ < the_cont_->static_vector_.max_size()) return the_cont_->static_vector_[cur_idx_];
 			return the_cont_->vector_[cur_idx_ - the_cont_->static_vector_.max_size()];
 		}
-		reference operator*(){
+		reference operator*() {
 			assert(the_cont_);
 			if (cur_idx_ < the_cont_->static_vector_.max_size()) return the_cont_->static_vector_[cur_idx_];
 			return the_cont_->vector_[cur_idx_ - the_cont_->static_vector_.max_size()];
 		}
-		const_pointer operator->() const{
+		const_pointer operator->() const {
 			return (std::pointer_traits<const_pointer>::pointer_to(**this));
 		}
-		pointer operator->(){
+		pointer operator->() {
 			return (std::pointer_traits<pointer>::pointer_to(**this));
 		}
-		MyIterator_& operator++(){
+		MyIterator_& operator++() {
 			assert(the_cont_);
 			++cur_idx_;
 			return (*this);
 		}
-		MyIterator_ operator++(int){
+		MyIterator_ operator++(int) {
 			auto _Tmp = *this;
 			++*this;
 			return (_Tmp);
 		}
-		MyIterator_& operator--(){
+		MyIterator_& operator--() {
 			--cur_idx_;
 			return (*this);
 		}
-		MyIterator_ operator--(int){
+		MyIterator_ operator--(int) {
 			auto _Tmp = *this;
 			--*this;
 			return (_Tmp);
 		}
-		MyIterator_& operator+=(difference_type off){
+		MyIterator_& operator+=(difference_type off) {
 			cur_idx_ += off;
 			return (*this);
 		}
-		MyIterator_ operator+(difference_type off) const{
+		MyIterator_ operator+(difference_type off) const {
 			auto _Tmp = *this;
 			return (_Tmp += off);
 		}
-		MyIterator_& operator-=(difference_type off){
+		MyIterator_& operator-=(difference_type off) {
 			return (*this += -off);
 		}
-		MyIterator_ operator-(difference_type off) const{
+		MyIterator_ operator-(difference_type off) const {
 			auto _Tmp = *this;
 			return (_Tmp -= off);
 		}
-		difference_type operator - (const MyIterator_& rhs) const{
+		difference_type operator - (const MyIterator_& rhs) const {
 			return cur_idx_ - rhs.cur_idx_;
 		}
-		reference operator[](difference_type off) const{
+		reference operator[](difference_type off) const {
 			return (*(*this + off));
 		}
-		bool operator==(const MyIterator_& rhs) const{
+		bool operator==(const MyIterator_& rhs) const {
 			return cur_idx_ == rhs.cur_idx_;
 		}
-		bool operator!=(const MyIterator_& rhs) const{
+		bool operator!=(const MyIterator_& rhs) const {
 			return (!(*this == rhs));
 		}
-		bool operator<(const MyIterator_& rhs) const{
+		bool operator<(const MyIterator_& rhs) const {
 			return cur_idx_ < rhs.cur_idx_;
 		}
-		bool operator>(const MyIterator_& rhs) const{
+		bool operator>(const MyIterator_& rhs) const {
 			return (rhs < *this);
 		}
-		bool operator<=(const MyIterator_& rhs) const{
+		bool operator<=(const MyIterator_& rhs) const {
 			return (!(rhs < *this));
 		}
-		bool operator>=(const MyIterator_& rhs) const{
+		bool operator>=(const MyIterator_& rhs) const {
 			return (!(*this < rhs));
 		}
 
@@ -368,101 +381,101 @@ public:
 	typedef MyIterator_ const_iterator;
 
 public:
-	CmnBufferVector(){}
-	CmnBufferVector(const CmnBufferVector& rhs){
+	CmnBufferVector() {}
+	CmnBufferVector(const CmnBufferVector& rhs) {
 		for (auto& v : rhs)
 			push_back(v);
 	}
-	explicit CmnBufferVector(size_type size){
+	explicit CmnBufferVector(size_type size) {
 		resize(size);
 	}
-	CmnBufferVector(std::initializer_list<value_type> init_list){
-		for (auto& v : init_list)
-			push_back(v);
-	}
-	CmnBufferVector& operator = (const CmnBufferVector& rhs){
+	/*CmnBufferVector(std::initializer_list<value_type> init_list){
+	for (auto& v : init_list)
+	push_back(v);
+	}*/
+	CmnBufferVector& operator = (const CmnBufferVector& rhs) {
 		clear();
 		for (auto& v : rhs)
 			push_back(v);
 		return *this;
 	}
-	iterator begin(){
+	iterator begin() {
 		return iterator(this, 0);
 	}
-	iterator end(){
+	iterator end() {
 		return iterator(this);
 	}
-	iterator begin() const{
+	iterator begin() const {
 		return iterator(this, 0);
 	}
-	iterator end() const{
+	iterator end() const {
 		return iterator(this);
 	}
-	void push_back(const value_type& v){
-		if (static_vector_.is_full())
-			vector_.push_back(v);
+	void push_back(const value_type& v) {
+		if (this->static_vector_.is_full())
+			this->vector_.push_back(v);
 		else
-			static_vector_.push_back(v);
+			this->static_vector_.push_back(v);
 	}
-	void pop_back(){
+	void pop_back() {
 		if (vector_.empty())
-			static_vector_.pop_back();
+			this->static_vector_.pop_back();
 		else
-			vector_.pop_back();
+			this->vector_.pop_back();
 	}
-	void pop_front(){
-		static_vector_.pop_front();
-		if (vector_.empty())
+	void pop_front() {
+		this->static_vector_.pop_front();
+		if (this->vector_.empty())
 			return;
-		static_vector_.push_back(vector_.front());
-		vector_.erase(vector_.begin());
+		this->static_vector_.push_back(vector_.front());
+		this->vector_.erase(vector_.begin());
 	}
-	void swap(CmnBufferVector& rhs){
+	void swap(CmnBufferVector& rhs) {
 		CmnBufferVector vec(*this);
 		*this = rhs;
 		rhs = vec;
 	}
-	size_type size() const{
-		return static_vector_.size() + vector_.size();
+	size_type size() const {
+		return this->static_vector_.size() + this->vector_.size();
 	}
-	bool empty() const{
-		return static_vector_.empty();
+	bool empty() const {
+		return this->static_vector_.empty();
 	}
-	const_reference operator[](size_type pos) const{
+	const_reference operator[](size_type pos) const {
 		return *(begin() + pos);
 	}
-	reference operator[](size_type pos){
+	reference operator[](size_type pos) {
 		return *(begin() + pos);
 	}
-	reference front(){
+	reference front() {
 		return *begin();
 	}
-	const_reference front() const{
+	const_reference front() const {
 		return (*begin());
 	}
-	reference back(){
+	reference back() {
 		return (*(end() - 1));
 	}
-	const_reference back() const{
+	const_reference back() const {
 		return (*(end() - 1));
 	}
-	void clear(){
-		static_vector_.clear();
-		vector_.clear();
+	void clear() {
+		this->static_vector_.clear();
+		this->vector_.clear();
 	}
-	void resize(size_type new_size){
-		if (static_vector_.max_size() >= new_size)
+	void resize(size_type new_size) {
+		if (this->static_vector_.max_size() >= new_size)
 			return;
 		new_size -= static_vector_.max_size();
-		vector_.resize(new_size);
+		this->vector_.resize(new_size);
 	}
-	void reserve(size_type new_size){
+	void reserve(size_type new_size) {
 		if (static_vector_.max_size() >= new_size)
 			return;
 		new_size -= static_vector_.max_size();
 		vector_.reserve(new_size);
 	}
-	void erase(const iterator& it){
+	void erase(const iterator& it) {
 		if (!it.the_cont_)
 		{
 			assert(false);
@@ -479,7 +492,7 @@ public:
 		}
 		vector_.erase(vector_.begin() + (it.cur_idx_ - static_vector_.max_size()));
 	}
-	void erase(const iterator& it, const iterator& it_end){
+	void erase(const iterator& it, const iterator& it_end) {
 		auto it_idx = std::min(it.cur_idx_, static_vector_.max_size());
 		auto it_end_idx = std::min(it_end.cur_idx_, static_vector_.max_size());
 		auto it_static = static_vector_.begin();
@@ -498,7 +511,7 @@ public:
 		if (cnt > 0)
 			vector_.erase(it_begin, it_begin + cnt);
 	}
-	bool is_full() const{
+	bool is_full() const {
 		return static_vector_.is_full();
 	}
 
@@ -508,19 +521,20 @@ private:
 };
 //////////////////////////////////////////////////////////////////////////
 template<typename T_, unsigned int ContSize_>
-class CmnStaticQueueBase_ : public CmnStaticContBase<T_, ContSize_>{
+class CmnStaticQueueBase_ : public CmnStaticContBase<T_, ContSize_> {
+	typedef CmnStaticContBase<T_, ContSize_> MyBase_;
+
 public:
-	IndexT		first_index_;
-	size_type	cur_size_;
+	typename MyBase_::IndexT		first_index_;
+	typename MyBase_::size_type		cur_size_;
 };
 
 template<typename T_, unsigned int Size_, typename PtrT_, typename RefT_>
-class CmnStaticQueue_ConstIterator : public std::_Iterator012<std::random_access_iterator_tag,
+class CmnStaticQueue_ConstIterator : public std::iterator<std::random_access_iterator_tag,
 	T_,
 	int,
 	PtrT_,
-	RefT_,
-	std::_Iterator_base>{
+	RefT_> {
 public:
 	typedef CmnStaticQueue_ConstIterator<T_, Size_, PtrT_, RefT_> _Myiter;
 	typedef CmnStaticQueueBase_<T_, Size_> TheContT_;
@@ -533,23 +547,23 @@ public:
 	typedef RefT_ reference;
 
 public:
-	CmnStaticQueue_ConstIterator(const TheContT_* cont, size_type cur_idx) : the_cont_(cont), cur_idx_(cur_idx){}
-	CmnStaticQueue_ConstIterator(const _Myiter& rhs) : the_cont_(rhs.the_cont_), cur_idx_(rhs.cur_idx_){}
-	_Myiter& operator = (const _Myiter& rhs){
+	CmnStaticQueue_ConstIterator(const TheContT_* cont, size_type cur_idx) : the_cont_(cont), cur_idx_(cur_idx) {}
+	CmnStaticQueue_ConstIterator(const _Myiter& rhs) : the_cont_(rhs.the_cont_), cur_idx_(rhs.cur_idx_) {}
+	_Myiter& operator = (const _Myiter& rhs) {
 		the_cont_ = rhs.the_cont_;
 		cur_idx_ = rhs.cur_idx_;
 		return *this;
 	}
-	reference operator*() const{
+	reference operator*() const {
 		assert(the_cont_);
 		return *(value_type*)&the_cont_->cont_[cur_idx_ % TheContT_::MaxSize];
 	}
-	pointer operator->() const{
+	pointer operator->() const {
 		return (std::pointer_traits<pointer>::pointer_to(**this));
 	}
-	_Myiter& operator++(){
+	_Myiter& operator++() {
 		assert(the_cont_);
-		if ( CurIdxFromFristItem() >= the_cont_->cur_size_ - 1 )
+		if (CurIdxFromFristItem() >= the_cont_->cur_size_ - 1)
 		{
 			the_cont_ = nullptr;
 			return (*this);
@@ -557,64 +571,64 @@ public:
 		++cur_idx_;
 		return (*this);
 	}
-	_Myiter operator++(int){
+	_Myiter operator++(int) {
 		auto _Tmp = *this;
 		++*this;
 		return (_Tmp);
 	}
-	_Myiter& operator--(){
+	_Myiter& operator--() {
 		--cur_idx_;
 		return (*this);
 	}
-	_Myiter operator--(int){	
+	_Myiter operator--(int) {
 		auto _Tmp = *this;
 		--*this;
 		return (_Tmp);
 	}
-	_Myiter& operator+=(difference_type off){
+	_Myiter& operator+=(difference_type off) {
 		cur_idx_ += off;
 		return (*this);
 	}
-	_Myiter operator+(difference_type off) const{
+	_Myiter operator+(difference_type off) const {
 		auto _Tmp = *this;
 		return (_Tmp += off);
 	}
-	_Myiter& operator-=(difference_type off){
+	_Myiter& operator-=(difference_type off) {
 		return (*this += -off);
 	}
-	_Myiter operator-(difference_type off) const{
+	_Myiter operator-(difference_type off) const {
 		auto _Tmp = *this;
 		return (_Tmp -= off);
 	}
-	reference operator[](difference_type off) const{
+	reference operator[](difference_type off) const {
 		return (*(*this + off));
 	}
-	bool operator==(const _Myiter& rhs) const{
+	bool operator==(const _Myiter& rhs) const {
 		return CurIdxFromFristItem() == rhs.CurIdxFromFristItem();
 	}
-	bool operator!=(const _Myiter& rhs) const{
+	bool operator!=(const _Myiter& rhs) const {
 		return (!(*this == rhs));
 	}
-	bool operator<(const _Myiter& rhs) const{
+	bool operator<(const _Myiter& rhs) const {
 		return CurIdxFromFristItem() < rhs.CurIdxFromFristItem();
 	}
-	bool operator>(const _Myiter& rhs) const{
+	bool operator>(const _Myiter& rhs) const {
 		return (rhs < *this);
 	}
-	bool operator<=(const _Myiter& rhs) const{
+	bool operator<=(const _Myiter& rhs) const {
 		return (!(rhs < *this));
 	}
-	bool operator>=(const _Myiter& rhs) const{
+	bool operator>=(const _Myiter& rhs) const {
 		return (!(*this < rhs));
 	}
-	//¥”µ⁄“ª∏ˆ‘™Àÿø™ ºµƒÀ˜“˝
-	size_type CurIdxFromFristItem() const{
-		if ( !the_cont_ )
+	//‰ªéÁ¨¨‰∏Ä‰∏™ÂÖÉÁ¥†ÂºÄÂßãÁöÑÁ¥¢Âºï
+	size_type CurIdxFromFristItem() const {
+		if (!the_cont_)
 			return TheContT_::MaxSize;
 		auto the_idx = cur_idx_ % TheContT_::MaxSize;
 		auto the_first_idx = the_cont_->first_index_ % TheContT_::MaxSize;
 		int res = (int)the_idx - the_first_idx;
-		if ( res >= 0 )
+		if (res >= 0)
 			return (size_type)res;
 		return (size_type)(the_cont_->cur_size_ + res);
 	}
@@ -625,134 +639,143 @@ private:
 };
 
 template<typename T_, unsigned int ContSize_>
-class CmnStaticQueue : public CmnStaticQueueBase_<T_, ContSize_>{
+class CmnStaticQueue : public CmnStaticQueueBase_<T_, ContSize_> {
 public:
 	typedef CmnStaticQueueBase_<T_, ContSize_> MyBaseT_;
 	typedef CmnStaticQueue_ConstIterator<T_, ContSize_, T_*, T_&> iterator;
 	typedef CmnStaticQueue_ConstIterator<T_, ContSize_, const T_*, const T_&> const_iterator;
 	friend const_iterator;
+	typedef typename MyBaseT_::ValueTypeT ValueTypeT;
+	typedef typename MyBaseT_::size_type size_type;
+	typedef typename MyBaseT_::IndexT IndexT;
 
 public:
-	CmnStaticQueue(){
-		first_index_ = MaxSize;
-		cur_size_ = 0;
+	CmnStaticQueue() {
+		this->first_index_ = MyBaseT_::MaxSize;
+		this->cur_size_ = 0;
 	}
-	~CmnStaticQueue(){
-		while ( !empty() )
+	~CmnStaticQueue() {
+		while (!empty())
 			pop();
 	}
-	CmnStaticQueue(const CmnStaticQueue& rhs){
-		first_index_ = MaxSize;
-		cur_size_ = 0;
+	CmnStaticQueue(const CmnStaticQueue& rhs) {
+		this->first_index_ = MyBaseT_::MaxSize;
+		this->cur_size_ = 0;
 		IndexT idx_tmp = rhs.first_index_;
 		size_type size_tmp = rhs.cur_size_;
-		while ( size_tmp > 0 )
+		while (size_tmp > 0)
 		{
-			push(*(ValueTypeT*)&rhs.cont_[idx_tmp % MaxSize]);
+			push(*(ValueTypeT*)&rhs.cont_[idx_tmp % MyBaseT_::MaxSize]);
 			++idx_tmp;
 			--size_tmp;
 		}
 	}
-	CmnStaticQueue& operator = (const CmnStaticQueue& rhs){
-		while ( !empty() )
+	CmnStaticQueue& operator = (const CmnStaticQueue& rhs) {
+		while (!empty())
 			pop();
 		IndexT idx_tmp = rhs.first_index_;
 		size_type size_tmp = rhs.cur_size_;
-		while ( size_tmp > 0 )
+		while (size_tmp > 0)
 		{
-			push(*(ValueTypeT*)&rhs.cont_[idx_tmp % MaxSize]);
+			push(*(ValueTypeT*)&rhs.cont_[idx_tmp % MyBaseT_::MaxSize]);
 			++idx_tmp;
 			--size_tmp;
 		}
 		return *this;
 	}
-	ValueTypeT& back(){
+	ValueTypeT& back() {
 		assert(!empty());
-		return *(ValueTypeT*)&cont_[((int)first_index_ + cur_size_ - 1) % MaxSize];
+		return *(ValueTypeT*)&this->cont_[((int)this->first_index_ + this->cur_size_ - 1) % MyBaseT_::MaxSize];
 	}
-	const ValueTypeT& back() const{
+	const ValueTypeT& back() const {
 		assert(!empty());
-		return *(const ValueTypeT*)&cont_[((int)first_index_ + cur_size_ - 1) % MaxSize];
+		return *(const ValueTypeT*)&this->cont_[((int)this->first_index_ + this->cur_size_ - 1) % MyBaseT_::MaxSize];
 	}
-	bool empty() const{
-		return 0 == cur_size_;
+	bool empty() const {
+		return 0 == this->cur_size_;
 	}
-	bool is_full() const{
-		return cur_size_ >= MaxSize;
+	bool is_full() const {
+		return this->cur_size_ >= MyBaseT_::MaxSize;
 	}
-	ValueTypeT& front(){
+	ValueTypeT& front() {
 		assert(!empty());
-		return *(ValueTypeT*)&cont_[first_index_ % MaxSize];
+		return *(ValueTypeT*)&this->cont_[this->first_index_ % MyBaseT_::MaxSize];
 	}
-	const ValueTypeT& front() const{
+	const ValueTypeT& front() const {
 		assert(!empty());
-		return *(ValueTypeT*)&cont_[first_index_ % MaxSize];
+		return *(ValueTypeT*)&this->cont_[this->first_index_ % MyBaseT_::MaxSize];
 	}
-	void pop(){
+	void pop() {
 		assert(!empty());
-		Destroy(first_index_ % MaxSize);
-		++first_index_;
-		--cur_size_;
+		Destroy(this->first_index_ % MyBaseT_::MaxSize);
+		++this->first_index_;
+		--this->cur_size_;
 	}
-	void push(const ValueTypeT& v){
+	void push(const ValueTypeT& v) {
 		if (is_full())
 		{
 			assert(false);
 			return;
 		}
-		Construct(((int)first_index_ + cur_size_) % MaxSize, v);
-		++cur_size_;
+		Construct(((int)this->first_index_ + this->cur_size_) % MyBaseT_::MaxSize, v);
+		++this->cur_size_;
 	}
-	size_type size() const{
-		return cur_size_;
+	size_type size() const {
+		return this->cur_size_;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	iterator begin(){
+	iterator begin() {
 		if (empty())
 			return end();
-		return iterator((MyBaseT_*)this, first_index_);
+		return iterator((MyBaseT_*)this, this->first_index_);
 	}
-	iterator end(){
-		return iterator((MyBaseT_*)nullptr, MaxSize);
+	iterator end() {
+		return iterator((MyBaseT_*)nullptr, MyBaseT_::MaxSize);
 	}
-	const_iterator begin() const{
+	const_iterator begin() const {
 		if (empty())
 			return end();
-		return const_iterator((MyBaseT_*)this, first_index_);
+		return const_iterator((MyBaseT_*)this, this->first_index_);
 	}
-	const_iterator end() const{
-		return const_iterator((MyBaseT_*)nullptr, MaxSize);
+	const_iterator end() const {
+		return const_iterator((MyBaseT_*)nullptr, MyBaseT_::MaxSize);
 	}
 	//////////////////////////////////////////////////////////////////////////
 };
 //////////////////////////////////////////////////////////////////////////
 template<typename T_, unsigned int ContSize_>
-class CmnStaticStack : public CmnStaticContBase<T_, ContSize_>{
+class CmnStaticStack : public CmnStaticContBase<T_, ContSize_> {
 public:
-	CmnStaticStack(){
+	typedef CmnStaticContBase<T_, ContSize_> MyBase_;
+	typedef typename MyBase_::size_type size_type;
+	typedef typename MyBase_::ValueTypeT ValueTypeT;
+	typedef typename MyBase_::IndexT IndexT;
+
+public:
+	CmnStaticStack() {
 		top_idx_ = (IndexT)-1;
 	}
-	~CmnStaticStack(){
-		while ( !empty() )
+	~CmnStaticStack() {
+		while (!empty())
 			pop();
 	}
-	CmnStaticStack( const CmnStaticStack& rhs ){
+	CmnStaticStack(const CmnStaticStack& rhs) {
 		top_idx_ = (IndexT)-1;
 		IndexT idx_tmp = 0;
 		size_type size_tmp = rhs.top_idx_ + 1;
-		while ( size_tmp > 0 )
+		while (size_tmp > 0)
 		{
 			push(*(ValueTypeT*)&rhs.cont_[idx_tmp]);
 			++idx_tmp;
 			--size_tmp;
 		}
 	}
-	CmnStaticStack& operator = ( const CmnStaticStack& rhs ){
-		while ( !empty() )
+	CmnStaticStack& operator = (const CmnStaticStack& rhs) {
+		while (!empty())
 			pop();
 		IndexT idx_tmp = 0;
 		size_type size_tmp = rhs.top_idx_ + 1;
-		while ( size_tmp > 0 )
+		while (size_tmp > 0)
 		{
 			push(*(ValueTypeT*)&rhs.cont_[idx_tmp]);
 			++idx_tmp;
@@ -760,24 +783,24 @@ public:
 		}
 		return *this;
 	}
-	bool empty() const{
-		return top_idx_ >= MaxSize;
+	bool empty() const {
+		return top_idx_ >= MyBase_::MaxSize;
 	}
-	bool is_full() const{
-		return top_idx_ == MaxSize - 1;
+	bool is_full() const {
+		return top_idx_ == MyBase_::MaxSize - 1;
 	}
-	size_type size() const{
+	size_type size() const {
 		return top_idx_ + 1;
 	}
-	ValueTypeT& top(){
+	ValueTypeT& top() {
 		assert(!empty());
-		return *(ValueTypeT*)&cont_[top_idx_];
+		return *(ValueTypeT*)&this->cont_[top_idx_];
 	}
-	const ValueTypeT& top() const{
+	const ValueTypeT& top() const {
 		assert(!empty());
-		return *(ValueTypeT*)&cont_[top_idx_];
+		return *(ValueTypeT*)&this->cont_[top_idx_];
 	}
-	void push( const ValueTypeT& v ){
+	void push(const ValueTypeT& v) {
 		if (is_full())
 		{
 			assert(false);
@@ -786,7 +809,7 @@ public:
 		++top_idx_;
 		Construct(top_idx_, v);
 	}
-	void pop(){
+	void pop() {
 		assert(!empty());
 		Destroy(top_idx_);
 		--top_idx_;
